@@ -2,11 +2,11 @@ import cv2
 import numpy as np
 from otsu import otsu
 
-ref_x = 901
+ref_x = 874
 
 
-def right_rail_edge(image):
-    rail_mask_left = 1105
+def left_rail_edge(image):
+    rail_mask_left = 730
 
 
     # image = cv2.imread(path)
@@ -17,7 +17,7 @@ def right_rail_edge(image):
     image = cv2.blur(image, (5,5))
 
     mask = np.ones(image.shape[:2], dtype="uint8")*255
-    cv2.rectangle(mask, (0, 0), (rail_mask_left, 1080), 0, -1)
+    cv2.rectangle(mask, (rail_mask_left, 0), (1920,1080), 0, -1)
     image = cv2.bitwise_and(image, image, mask=mask)
     # cv2.namedWindow("Display", cv2.WINDOW_NORMAL)
     # cv2.imshow("Display", image)
@@ -47,12 +47,12 @@ def right_rail_edge(image):
             # print(f"{x} is added to list")
             strlist.append(x)
 
-    minR = 99999999
+    maxL = 0
     temp = []
     for x in strlist:
-        if (x[0][0] > rail_mask_left+10):
-            if (x[0][0] < minR):
-                minR = x[0][0]
+        if (x[0][0] < rail_mask_left-10):
+            if (x[0][0] > maxL):
+                maxL = x[0][0]
                 temp = x
     strlist = []
     # strlist.append([[minR, 0, minR, image.shape[0]]])
@@ -70,8 +70,8 @@ def right_rail_edge(image):
     for i in range(a1):
         cv2.line(image, (strlist[i][0][0], strlist[i][0][1]), (strlist[i]
                                                                [0][2], strlist[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
-    cv2.namedWindow("Rail Edge Right", cv2.WINDOW_NORMAL)
-    cv2.imshow("Rail Edge Right", image)
+    cv2.namedWindow("Rail Edge Left", cv2.WINDOW_NORMAL)
+    cv2.imshow("Rail Edge Left", image)
     cv2.waitKey(1)
     # image = cv2.resize(image, (int(3840/2), int(2160/2)))
     # cv2.namedWindow("HoughLines", cv2.WINDOW_NORMAL)
@@ -79,3 +79,38 @@ def right_rail_edge(image):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     return strlist
+
+# def process_video():
+#     avg_list = []
+#     # extract frames from video
+#     is_webcam = False
+#     if not is_webcam:
+#         vidcap = cv2.VideoCapture(r"D:\\railway_proj\\railway_inspection_automation\\left.mp4")
+#         success, image = vidcap.read()
+#     else:
+#         vidcap = cv2.VideoCapture(1)
+#         success, image = vidcap.read()
+#     while success:
+#         success, image = vidcap.read()
+#         right_linelist = right_rail_edge(image)
+#         try:
+#             a1, _, _ = right_linelist.shape
+#         except:
+#             continue
+#         for i in range(a1):
+#             cv2.line(image, (right_linelist[i][0][0], right_linelist[i][0][1]),
+#                      (right_linelist[i][0][2], right_linelist[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
+#             # cv2.line(image, (right_linelist[i][0][0], 0), (right_linelist[i][0][0], image.shape[0]), (0, 0, 255), 1, cv2.LINE_AA)
+#             avg_list.append(abs(right_linelist[i][0][0]-ref_x)*0.219)
+#             print(len(avg_list))
+#             if(len(avg_list)>10):
+#                 print(sum(avg_list)/len(avg_list))
+#                 avg_list = []
+#             # print((right_linelist[i][0][0]-rc.ref_x)*0.219)
+#         # cv2.namedWindow("Rail Edge", cv2.WINDOW_NORMAL)
+#         # cv2.imshow("Rail Edge", image)
+#         # cv2.waitKey(1)
+
+
+# if __name__ == "__main__":
+#     process_video()
