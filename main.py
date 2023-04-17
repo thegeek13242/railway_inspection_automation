@@ -7,15 +7,15 @@ def process_video():
     avg_listR = []
     avg_listL = []
     # extract frames from video
-    is_webcam = False
+    is_webcam = True
     if not is_webcam:
         vidcapR = cv2.VideoCapture(r"D:\\railway_proj\\railway_inspection_automation\\right.mp4")
         vidcapL = cv2.VideoCapture(r"D:\\railway_proj\\railway_inspection_automation\\left.mp4")
         success, imageR = vidcapR.read()
         success, imageL = vidcapL.read()
     else:
-        vidcapR = cv2.VideoCapture(1)
-        vidcapL = cv2.VideoCapture(0)
+        vidcapR = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+        vidcapL = cv2.VideoCapture(2,cv2.CAP_DSHOW)
         success, imageR = vidcapR.read()
         success, imageL = vidcapL.read()
     while success:
