@@ -1,21 +1,25 @@
 import rightcam as rc
 import leftcam as lc
+import numpy as np
 import cv2
-
 
 def process_video():
     avg_listR = []
     avg_listL = []
     # extract frames from video
-    is_webcam = False
+    is_webcam = True
     if not is_webcam:
         vidcapR = cv2.VideoCapture(r"D:\\railway_proj\\railway_inspection_automation\\right.mp4")
         vidcapL = cv2.VideoCapture(r"D:\\railway_proj\\railway_inspection_automation\\left.mp4")
         success, imageR = vidcapR.read()
         success, imageL = vidcapL.read()
     else:
-        vidcapR = cv2.VideoCapture(1)
-        vidcapL = cv2.VideoCapture(0)
+        vidcapR = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+        vidcapL = cv2.VideoCapture(2,cv2.CAP_DSHOW)
+        vidcapR.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        vidcapR.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        vidcapL.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        vidcapL.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         success, imageR = vidcapR.read()
         success, imageL = vidcapL.read()
     while success:
@@ -38,6 +42,9 @@ def process_video():
             if(len(avg_listR)>10):
                 print(sum(avg_listR)/len(avg_listR))
                 avg_listR = []
+        cv2.namedWindow("Rail Edge Right", cv2.WINDOW_NORMAL)
+        cv2.imshow("Rail Edge Right", imageR)
+        cv2.waitKey(1)
         for i in range(a1_L):
             cv2.line(imageL, (left_linelist[i][0][0], left_linelist[i][0][1]),
                      (left_linelist[i][0][2], left_linelist[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
@@ -47,6 +54,9 @@ def process_video():
             if(len(avg_listL)>10):
                 print(sum(avg_listL)/len(avg_listL))
                 avg_listL = []
+        cv2.namedWindow("Rail Edge Left", cv2.WINDOW_NORMAL)
+        cv2.imshow("Rail Edge Left", imageL)
+        cv2.waitKey(1)
         # cv2.namedWindow("Rail Edge", cv2.WINDOW_NORMAL)
             # print((right_linelist[i][0][0]-rc.ref_x)*0.219)
         # cv2.namedWindow("Rail Edge", cv2.WINDOW_NORMAL)
