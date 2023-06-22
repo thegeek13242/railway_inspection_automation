@@ -43,7 +43,7 @@ def click_event(event, x, y, flags, params):
 if __name__=="__main__":
  
     # reading the image
-    img = cv2.imread("vlcsnap-2023-02-27-22h49m06s042.png", 1)
+    img = cv2.imread("lrm.jpg", 1)
     
  
     # displaying the image

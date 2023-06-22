@@ -7,8 +7,7 @@ ref_x = 901
 
 def right_rail_edge(image):
     rail_mask_left = 1105
-
-
+    
     # image = cv2.imread(path)
 
     # kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
@@ -34,7 +33,6 @@ def right_rail_edge(image):
 
     lines = cv2.HoughLinesP(image=edges, rho=1.4, theta=np.pi/180, threshold=int(
         threshold), lines=np.array([]), minLineLength=minLineLength, maxLineGap=15)
-    a, b, c = lines.shape
     l = lines.tolist()
 
     # Only straight lines are considered
@@ -59,23 +57,4 @@ def right_rail_edge(image):
     strlist.append(temp)
 
     strlist = np.array(strlist)
-    # print(strlist)
-    # print((minR-maxL)*calibFactor)
-    try:
-        a1, b1, c1 = strlist.shape
-    except:
-        return None
-    # for i in range(a):
-    #     cv2.line(image, (lines[i][0][0], lines[i][0][1]), (lines[i][0][2], lines[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
-    for i in range(a1):
-        cv2.line(image, (strlist[i][0][0], strlist[i][0][1]), (strlist[i]
-                                                               [0][2], strlist[i][0][3]), (0, 0, 255), 1, cv2.LINE_AA)
-    cv2.namedWindow("Rail Edge Right", cv2.WINDOW_NORMAL)
-    cv2.imshow("Rail Edge Right", image)
-    cv2.waitKey(1)
-    # image = cv2.resize(image, (int(3840/2), int(2160/2)))
-    # cv2.namedWindow("HoughLines", cv2.WINDOW_NORMAL)
-    # cv2.imwrite('final.jpg', image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
     return strlist
