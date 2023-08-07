@@ -2,11 +2,9 @@ import cv2
 import numpy as np
 from otsu import otsu
 
-ref_x = 874
 
-
-def left_rail_edge(image):
-    rail_mask_left = 730
+def left_rail_edge(image, rail_mask_left, disp_mask = False):
+    # rail_mask_left = 730
 
 
     # image = cv2.imread(path)
@@ -19,9 +17,10 @@ def left_rail_edge(image):
     mask = np.ones(image.shape[:2], dtype="uint8")*255
     cv2.rectangle(mask, (rail_mask_left, 0), (1920,1080), 0, -1)
     image = cv2.bitwise_and(image, image, mask=mask)
-    # cv2.namedWindow("Display", cv2.WINDOW_NORMAL)
-    # cv2.imshow("Display", image)
-    # cv2.waitKey(0)
+    if disp_mask:
+        cv2.namedWindow("DisplayL", cv2.WINDOW_NORMAL)
+        cv2.imshow("DisplayL", image)
+        cv2.waitKey(1)
 
     is_reduce_noise = 1
     is_normalized = 1
