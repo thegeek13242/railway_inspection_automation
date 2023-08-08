@@ -3,8 +3,8 @@ import numpy as np
 from otsu import otsu
 
 
-def right_rail_edge(image, rail_mask_right, disp_mask = False):
-    # rail_mask_right = 1105
+def right_rail_edge(image, rail_mask_right_inner, rail_mask_right_outer, disp_mask = False):
+    # rail_mask_right_inner = 1105
     
     # image = cv2.imread(path)
 
@@ -13,9 +13,16 @@ def right_rail_edge(image, rail_mask_right, disp_mask = False):
 
     image = cv2.blur(image, (5,5))
 
+    # INNER MASK
     mask = np.ones(image.shape[:2], dtype="uint8")*255
-    cv2.rectangle(mask, (0, 0), (rail_mask_right, 1080), 0, -1)
+    cv2.rectangle(mask, (0, 0), (rail_mask_right_inner, 1080), 0, -1)
     image = cv2.bitwise_and(image, image, mask=mask)
+
+    # OUTER MASK
+    mask = np.ones(image.shape[:2], dtype="uint8")*255
+    cv2.rectangle(mask, (rail_mask_right_outer, 0), (1920,1080), 0, -1)
+    image = cv2.bitwise_and(image, image, mask=mask)
+
     if disp_mask:
         cv2.namedWindow("DisplayR", cv2.WINDOW_NORMAL)
         cv2.imshow("DisplayR", image)
@@ -47,7 +54,7 @@ def right_rail_edge(image, rail_mask_right, disp_mask = False):
     minR = 99999999
     temp = []
     for x in strlist:
-        if (x[0][0] > rail_mask_right+10):
+        if (x[0][0] > rail_mask_right_inner+10):
             if (x[0][0] < minR):
                 minR = x[0][0]
                 temp = x

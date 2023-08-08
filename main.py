@@ -3,8 +3,11 @@ import leftcam as lc
 import numpy as np
 import cv2
 
-MASK_LEFT = 940#970
-MASK_RIGHT = 1000#980
+MASK_LEFT_INNER = 940#970
+MASK_RIGHT_INNER = 1000#980
+
+MASK_LEFT_OUTER = 630
+MASK_RIGHT_OUTER = 1224
 
 LEFT_REF_X = 1379 #874
 RIGHT_REF_X = 607 #901
@@ -22,7 +25,7 @@ def process_video():
     avg_listL = []
     # extract frames from video
     
-    is_webcam = True
+    is_webcam = False
 
     if not is_webcam:
         vidcapR = cv2.VideoCapture(r"right.mp4")
@@ -41,8 +44,8 @@ def process_video():
     while success:
         success, imageR = vidcapR.read()
         success, imageL = vidcapL.read()
-        right_linelist = rc.right_rail_edge(imageR, MASK_RIGHT, DISPLAY_MASK)
-        left_linelist = lc.left_rail_edge(imageL, MASK_LEFT, DISPLAY_MASK)
+        right_linelist = rc.right_rail_edge(imageR, rail_mask_right_inner=MASK_RIGHT_INNER, rail_mask_right_outer=MASK_RIGHT_OUTER, disp_mask=DISPLAY_MASK)
+        left_linelist = lc.left_rail_edge(imageL, rail_mask_left_inner=MASK_LEFT_INNER, rail_mask_left_outer=MASK_LEFT_OUTER, disp_mask=DISPLAY_MASK)
         try:
             a1_R, _, _ = right_linelist.shape
             a1_L, _, _ = left_linelist.shape
