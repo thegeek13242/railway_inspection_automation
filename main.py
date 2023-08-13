@@ -3,8 +3,13 @@ import leftcam as lc
 import numpy as np
 import cv2
 
-MASK_LEFT_INNER = 940#970
-MASK_RIGHT_INNER = 1000#980
+import queue
+import threading
+import streamlit as st
+
+
+MASK_LEFT_INNER = 940 #970
+MASK_RIGHT_INNER = 1000 #980
 
 MASK_LEFT_OUTER = 630
 MASK_RIGHT_OUTER = 1224
@@ -15,9 +20,11 @@ RIGHT_REF_X = 607 #901
 MM_PER_PX_RIGHT = 0.2505 #2601
 MM_PER_PX_LEFT = 0.2601 #2505
 
-DISPLAY_MASK = True
+DISPLAY_MASK = False
+DISPLAY_IMAGE = False
 
-def process_video():
+
+def process_video(q):
     LR_REF_DIST = 1425 # distance in the plane of rail between reference objects in mm
     LEFT_DIST = 0
     RIGHT_DIST = 0
@@ -62,9 +69,10 @@ def process_video():
             if(len(avg_listR)>10):
                 RIGHT_DIST = abs(sum(avg_listR)/len(avg_listR))
                 avg_listR = []
-        cv2.namedWindow("Rail Edge Right", cv2.WINDOW_NORMAL)
-        cv2.imshow("Rail Edge Right", imageR)
-        cv2.waitKey(1)
+        if DISPLAY_IMAGE:
+            cv2.namedWindow("Rail Edge Right", cv2.WINDOW_NORMAL)
+            cv2.imshow("Rail Edge Right", imageR)
+            cv2.waitKey(1)
 
         for i in range(a1_L):
             cv2.line(imageL, (left_linelist[i][0][0], left_linelist[i][0][1]),
@@ -75,17 +83,52 @@ def process_video():
             if(len(avg_listL)>10):
                 LEFT_DIST = abs(sum(avg_listL)/len(avg_listL))
                 avg_listL = []
-        cv2.namedWindow("Rail Edge Left", cv2.WINDOW_NORMAL)
-        cv2.imshow("Rail Edge Left", imageL)
-        cv2.waitKey(1)
+        if DISPLAY_IMAGE:
+            cv2.namedWindow("Rail Edge Left", cv2.WINDOW_NORMAL)
+            cv2.imshow("Rail Edge Left", imageL)
+            cv2.waitKey(1)
         print(LEFT_DIST+RIGHT_DIST+LR_REF_DIST)
         # cv2.namedWindow("Rail Edge", cv2.WINDOW_NORMAL)
             # print((right_linelist[i][0][0]-rc.ref_x)*0.219)
         # cv2.namedWindow("Rail Edge", cv2.WINDOW_NORMAL)
         # cv2.imshow("Rail Edge", imageR)
         # cv2.waitKey(1)
+        q.put((cv2.hconcat(imageL,imageR),LEFT_DIST+RIGHT_DIST+LR_REF_DIST))
+
+
+# if __name__ == "__main__":
+#     print("start")
+#     process_video()
+
+def start_video():
+    global started
+    if started:
+        return
+    global q, t
+    q = queue.Queue()
+    t = threading.Thread(target=process_video, args=(q,))
+    t.daemon = True
+    t.start()
+    started = True
+
+def get_video():
+    start_video()
+    return q.get()
+
+def stop_video():
+    t.join()
+
 
 
 if __name__ == "__main__":
-    print("start")
-    process_video()
+    started = False
+    q = queue.Queue()
+
+    st.write("Distance: ")
+    output = st.empty()
+
+    while True:
+        value = get_video()
+        st.write(value[1])
+        st.image(value[0], channels="RGB")
+        st.empty()
