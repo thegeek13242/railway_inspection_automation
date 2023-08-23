@@ -2,11 +2,11 @@ import rightcam as rc
 import leftcam as lc
 import numpy as np
 import cv2
-
-import queue
-import threading
 import streamlit as st
-
+import sys
+import os
+import altair as alt
+import pandas as pd
 
 MASK_LEFT_INNER = 940 #970
 MASK_RIGHT_INNER = 1000 #980
@@ -21,19 +21,21 @@ MM_PER_PX_RIGHT = 0.2505 #2601
 MM_PER_PX_LEFT = 0.2601 #2505
 
 DISPLAY_MASK = False
-DISPLAY_IMAGE = False
 
-
-def process_video(q):
+def process_video():
     LR_REF_DIST = 1425 # distance in the plane of rail between reference objects in mm
     LEFT_DIST = 0
     RIGHT_DIST = 0
     avg_listR = []
     avg_listL = []
     # extract frames from video
-    
-    is_webcam = False
+    data_log = pd.DataFrame(columns=['x','Distance'])
+    ci = 0
 
+    is_webcam = True
+    placeholder = st.empty()
+    pl_stop_button = st.empty()
+    
     if not is_webcam:
         vidcapR = cv2.VideoCapture(r"right.mp4")
         vidcapL = cv2.VideoCapture(r"left.mp4")
@@ -69,10 +71,9 @@ def process_video(q):
             if(len(avg_listR)>10):
                 RIGHT_DIST = abs(sum(avg_listR)/len(avg_listR))
                 avg_listR = []
-        if DISPLAY_IMAGE:
-            cv2.namedWindow("Rail Edge Right", cv2.WINDOW_NORMAL)
-            cv2.imshow("Rail Edge Right", imageR)
-            cv2.waitKey(1)
+        cv2.namedWindow("Rail Edge Right", cv2.WINDOW_NORMAL)
+        cv2.imshow("Rail Edge Right", imageR)
+        cv2.waitKey(1)
 
         for i in range(a1_L):
             cv2.line(imageL, (left_linelist[i][0][0], left_linelist[i][0][1]),
@@ -83,52 +84,51 @@ def process_video(q):
             if(len(avg_listL)>10):
                 LEFT_DIST = abs(sum(avg_listL)/len(avg_listL))
                 avg_listL = []
-        if DISPLAY_IMAGE:
-            cv2.namedWindow("Rail Edge Left", cv2.WINDOW_NORMAL)
-            cv2.imshow("Rail Edge Left", imageL)
-            cv2.waitKey(1)
-        print(LEFT_DIST+RIGHT_DIST+LR_REF_DIST)
-        # cv2.namedWindow("Rail Edge", cv2.WINDOW_NORMAL)
-            # print((right_linelist[i][0][0]-rc.ref_x)*0.219)
-        # cv2.namedWindow("Rail Edge", cv2.WINDOW_NORMAL)
-        # cv2.imshow("Rail Edge", imageR)
-        # cv2.waitKey(1)
-        q.put((cv2.hconcat(imageL,imageR),LEFT_DIST+RIGHT_DIST+LR_REF_DIST))
+        cv2.namedWindow("Rail Edge Left", cv2.WINDOW_NORMAL)
+        cv2.imshow("Rail Edge Left", imageL)
+        cv2.waitKey(1)
+        
+        if(not len(avg_listR)):
+            print(LEFT_DIST+RIGHT_DIST+LR_REF_DIST)
+            res = LEFT_DIST+RIGHT_DIST+LR_REF_DIST
+            data_log = pd.concat([data_log,pd.DataFrame({'x':ci,'Distance':res},index=['x'])]).reset_index(drop=True)
+            print(data_log)
+            chart = alt.Chart(data_log).mark_line().encode(
+                y=alt.Y('Distance:Q', scale=alt.Scale(domain=(1640, 1700))),
+                x='x:Q'
+            )
+            line = pd.DataFrame({
+                'x': [0, ci],
+                'Distance':  [1667, 1667],
+            })
 
+            line_plot = alt.Chart(line).mark_line(color= 'red').encode(
+                x= 'x',
+                y= 'Distance',
+            )
+            ci=ci+1
+            with placeholder.container():
+                st.markdown("Distance: "+str(round(res,2)))
+                st.markdown("Chart")
+                st.altair_chart(chart+line_plot, use_container_width=True)
+            
+            pl_stop_button.empty()
+            with pl_stop_button.container():
+                if st.button('Stop',key=ci):
+                    stop()
 
-# if __name__ == "__main__":
-#     print("start")
-#     process_video()
+def start():
+    process_video()
 
-def start_video():
-    global started
-    if started:
-        return
-    global q, t
-    q = queue.Queue()
-    t = threading.Thread(target=process_video, args=(q,))
-    t.daemon = True
-    t.start()
-    started = True
-
-def get_video():
-    start_video()
-    return q.get()
-
-def stop_video():
-    t.join()
-
-
+def stop():
+    pid = os.getppid()
+    os.kill(pid, 9)
 
 if __name__ == "__main__":
-    started = False
-    q = queue.Queue()
-
-    st.write("Distance: ")
-    output = st.empty()
-
-    while True:
-        value = get_video()
-        st.write(value[1])
-        st.image(value[0], channels="RGB")
-        st.empty()
+    st.set_page_config(
+        page_title="Railway Inspection Automation",
+)
+    st.title("Railway Inspection Automation")
+    if st.button("Start"):
+        print("start")
+        process_video()
