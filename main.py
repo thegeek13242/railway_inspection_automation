@@ -9,21 +9,25 @@ import altair as alt
 import pandas as pd
 
 MASK_LEFT_INNER = 940 #970
-MASK_RIGHT_INNER = 1000 #980
+MASK_RIGHT_INNER = 1000 #1000 #980
 
-MASK_LEFT_OUTER = 630
-MASK_RIGHT_OUTER = 1224
+MASK_LEFT_OUTER = 750 #400
+MASK_RIGHT_OUTER = 1150#1500
 
-LEFT_REF_X = 1379 #874
-RIGHT_REF_X = 607 #901
+LEFT_REF_X = 691 #874
+RIGHT_REF_X = 326 #901
 
-MM_PER_PX_RIGHT = 0.2505 #2601
-MM_PER_PX_LEFT = 0.2601 #2505
+MM_PER_PX_RIGHT = 0.4674 #0.2505 #2601
+MM_PER_PX_LEFT = 0.4902 #0.2601 #2505
 
-DISPLAY_MASK = False
+GRAPH_LOWER = 1550 
+GRAPH_UPPER = 2000
+REF_GRAPH_LINE = 1676
+
+DISPLAY_MASK = True
 
 def process_video():
-    LR_REF_DIST = 1425 # distance in the plane of rail between reference objects in mm
+    LR_REF_DIST = 1215 #1425 #1315 #1345 #1425 # distance in the plane of rail between reference objects in mm
     LEFT_DIST = 0
     RIGHT_DIST = 0
     avg_listR = []
@@ -94,12 +98,12 @@ def process_video():
             data_log = pd.concat([data_log,pd.DataFrame({'x':ci,'Distance':res},index=['x'])]).reset_index(drop=True)
             print(data_log)
             chart = alt.Chart(data_log).mark_line().encode(
-                y=alt.Y('Distance:Q', scale=alt.Scale(domain=(1640, 1700))),
+                y=alt.Y('Distance:Q', scale=alt.Scale(domain=(GRAPH_LOWER, GRAPH_UPPER))),
                 x='x:Q'
             )
             line = pd.DataFrame({
                 'x': [0, ci],
-                'Distance':  [1667, 1667],
+                'Distance':  [REF_GRAPH_LINE, REF_GRAPH_LINE], # Referece line plot on screen
             })
 
             line_plot = alt.Chart(line).mark_line(color= 'red').encode(
