@@ -5,12 +5,12 @@ import cv2
 import streamlit as st
 import sys
 import os
-import serial
+# import serial
 import re
 import time
 from math import atan2, degrees
-import board
-import adafruit_mpu6050
+# import board
+# import adafruit_mpu6050
 # import altair as alt
 # import pandas as pd
 
@@ -197,9 +197,18 @@ def process_video():
                 inclination = get_inclination(sensor)
                 print(distance)
                 print(inclination)
-
+                num_km = 0
+                
+                if num_km == 0:
+                    num_km += 1
+                    prev_inclination = inclination
+                if distance > num_km * 3378378.37:
+                    num_km += 1
+                    prev_inclination = inclination
+                
                 with placeholder.container():
                     st.markdown("Rail Separation: " + str(round(res, 2)))
+                    st.markdown("Distance Travelled: " + str(round(distance, 2)))
 
                     # st.markdown("Chart")
                     # st.altair_chart(chart + line_plot, use_container_width=True)
