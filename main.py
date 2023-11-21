@@ -5,20 +5,22 @@ import cv2
 import streamlit as st
 import sys
 import os
-# import serial
+import serial
 import re
 import time
 from math import atan2, degrees
-# import board
-# import adafruit_mpu6050
+import board
+import adafruit_mpu6050
 # import altair as alt
 # import pandas as pd
 
-MASK_LEFT_INNER = 940  # 970
-MASK_RIGHT_INNER = 1000  # 1000 #980
+CORRECT_VALUE = 1674
 
-MASK_LEFT_OUTER = 750  # 400
-MASK_RIGHT_OUTER = 1150  # 1500
+MASK_LEFT_INNER = 811  # 970
+MASK_RIGHT_INNER = 1084  # 1000 #980
+
+MASK_LEFT_OUTER = 696  # 400
+MASK_RIGHT_OUTER = 1209  # 1500
 
 LEFT_REF_X = 691  # 874
 RIGHT_REF_X = 326  # 901
@@ -41,6 +43,16 @@ DISPLAY_MASK = True
 i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = adafruit_mpu6050.MPU6050(i2c)
 
+serial_port = serial.Serial(
+    port="/dev/ttyTHS0",
+    baudrate=115200,
+    bytesize=serial.EIGHTBITS,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+)
+# Wait a second to let the port initialize
+time.sleep(1)
+
 def vector_2_degrees(x, y):
     angle = degrees(atan2(y, x))
     if angle < 0:
@@ -58,7 +70,7 @@ def get_inclination(_sensor):
     
     mean_angle_xz = mean_angle_xz/500
 
-    time.sleep(0.5)
+    time.sleep(0.01)
     return mean_angle_xz
 
 
@@ -72,8 +84,10 @@ def process_video():
     # data_log = pd.DataFrame(columns=["x", "Distance"])
     ci = 0
 
-    is_webcam = False
-    placeholder = st.empty()
+    is_webcam = True
+    placeholder_rail = st.empty()
+    placeholder_sensor = st.empty()
+
     pl_stop_button = st.empty()
 
     if not is_webcam:
@@ -90,8 +104,8 @@ def process_video():
         vidcapL.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         success, imageR = vidcapR.read()
         success, imageL = vidcapL.read()
-    with serial.Serial('/dev/ttyUSB0', 9600, timeout=10) as ser:
-        while success:
+
+    while success:
             success, imageR = vidcapR.read()
             success, imageL = vidcapL.read()
             right_linelist = rc.right_rail_edge(
@@ -117,6 +131,7 @@ def process_video():
             except:
                 continue
 
+
             for i in range(a1_R):
                 cv2.line(
                     imageR,
@@ -132,9 +147,11 @@ def process_video():
                 if len(avg_listR) > 10:
                     RIGHT_DIST = abs(sum(avg_listR) / len(avg_listR))
                     avg_listR = []
+            
             cv2.namedWindow("Rail Edge Right", cv2.WINDOW_NORMAL)
             cv2.imshow("Rail Edge Right", imageR)
             cv2.waitKey(1)
+
 
             for i in range(a1_L):
                 cv2.line(
@@ -190,26 +207,42 @@ def process_video():
                 #         y="Distance",
                 #     )
                 # )
-                # ci = ci + 1
-                dist_reading = ser.readline()
-                distance = int(re.search(r'\d+', dist_reading).group()) * 0.0296
-                print("here")
+                ci = ci + 1
+                with placeholder_rail.container():
+                    st.markdown("**Rail Separation:** " + str(round(res, 2)) + "mm")
+                    st.markdown("**Rail Error:** " + str(round(CORRECT_VALUE - round(res,2), 2)) + "mm")
+                    
+                data = serial_port.read()
+                dist_reading = ""
+                dist_int = 0
+                while data != "\r".encode():
+                    data = serial_port.read()
+                    dist_reading += data.decode("utf-8")
+                    # print(dist_reading)
+                dist_int= int(dist_reading)
+            
+                print(dist_int)
+                distance = dist_int * 2.26 * 10 ** -4
+                print("Distance: " + str(distance))
                 inclination = get_inclination(sensor)
-                print(distance)
-                print(inclination)
-                num_km = 0
+                # inclination = 0
                 
+                num_km = 0
+                difference_inc = 0
                 if num_km == 0:
                     num_km += 1
                     prev_inclination = inclination
-                if distance > num_km * 3378378.37:
+                if distance > num_km * 3378.378:
                     num_km += 1
+                    difference_inc = abs(inclination - prev_inclination)
                     prev_inclination = inclination
-                
-                with placeholder.container():
-                    st.markdown("Rail Separation: " + str(round(res, 2)))
-                    st.markdown("Distance Travelled: " + str(round(distance, 2)))
-
+                print(distance)
+                print(difference_inc)
+                with placeholder_sensor.container():
+                    st.markdown("**Distance Travelled:** " + str(abs(round(distance, 2))))
+                    st.markdown("**Inclination Change:** " + str(difference_inc))
+                    if difference_inc > 2.8:
+                        st.markdown(":red[Inclination difference value greater than 2.8]")
                     # st.markdown("Chart")
                     # st.altair_chart(chart + line_plot, use_container_width=True)
 
